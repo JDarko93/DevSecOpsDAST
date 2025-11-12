@@ -1,0 +1,141 @@
+name: Security Scanning Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly on Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      run: |
+        docker-compose build
+        docker tag devsecops-security-pipeline-web:latest devsecops-security-pipeline-web:${{ github.sha }}
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'devsecops-security-pipeline-web:latest'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH,MEDIUM'
+    
+    - name: Generate Trivy HTML report
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'devsecops-security-pipeline-web:latest'
+        format: 'template'
+        template: '@/contrib/html.tpl'
+        output: 'trivy-report.html'
+        severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+    
+    - name: Upload Trivy scan results
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-report
+        path: trivy-report.html
+        retention-days: 30
+    
+    - name: Start application for DAST testing
+      run: |
+        docker-compose up -d
+        echo "Waiting for application to be ready..."
+        sleep 15
+        curl -f http://localhost:5000/health || exit 1
+    
+    - name: Run OWASP ZAP DAST Scan
+      run: |
+        docker run --rm \
+          --network host \
+          -v $(pwd):/zap/wrk:rw \
+          -v $(pwd)/zap-config.yaml:/zap/wrk/zap-config.yaml:ro \
+          ghcr.io/zaproxy/zaproxy:stable \
+          zap-automation.py -configfile /zap/wrk/zap-config.yaml
+    
+    - name: Upload ZAP scan results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: zap-report
+        path: zap-report.html
+        retention-days: 30
+    
+    - name: Check for critical vulnerabilities
+      run: |
+        echo "Checking scan results for critical vulnerabilities..."
+        
+        # Check Trivy results
+        if grep -q "CRITICAL" trivy-report.html; then
+          echo "⚠️ CRITICAL vulnerabilities found in container image!"
+          echo "critical_vulns=true" >> $GITHUB_ENV
+        fi
+        
+        # Check ZAP results for high-risk findings
+        if grep -q "High" zap-report.html; then
+          echo "⚠️ HIGH risk security issues found in DAST scan!"
+          echo "security_issues=true" >> $GITHUB_ENV
+        fi
+    
+    - name: Generate Security Summary
+      if: always()
+      run: |
+        echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
+        echo "- **Trivy Container Scan**: Completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **OWASP ZAP DAST Scan**: Completed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Reports Available" >> $GITHUB_STEP_SUMMARY
+        echo "Download the artifacts from this workflow run to view detailed reports." >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ env.critical_vulns }}" == "true" ] || [ "${{ env.security_issues }}" == "true" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **ATTENTION**: Critical security issues detected!" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Send email notification
+      if: env.critical_vulns == 'true' || env.security_issues == 'true'
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "⚠️ Security Vulnerabilities Detected - ${{ github.repository }}"
+        body: |
+          Security scan completed with critical findings.
+          
+          Repository: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          
+          Critical vulnerabilities or security issues were detected during automated scanning.
+          
+          Please review the scan reports in the GitHub Actions artifacts:
+          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          Scan Results:
+          - Trivy Container Scan: ${{ env.critical_vulns == 'true' && 'CRITICAL vulnerabilities found' || 'Completed' }}
+          - OWASP ZAP DAST Scan: ${{ env.security_issues == 'true' && 'HIGH risk issues found' || 'Completed' }}
+          
+          This is an automated notification from your DevSecOps pipeline.
+        to: ${{ secrets.NOTIFICATION_EMAIL }}
+        from: DevSecOps Pipeline <${{ secrets.EMAIL_USERNAME }}>
+    
+    - name: Cleanup
+      if: always()
+      run: docker-compose down

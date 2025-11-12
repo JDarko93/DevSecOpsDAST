@@ -1,0 +1,41 @@
+# OWASP ZAP automation framework configuration
+env:
+  contexts:
+    - name: "devsecops-app"
+      urls:
+        - "http://web:5000"
+      includePaths:
+        - "http://web:5000/.*"
+      excludePaths: []
+      authentication:
+        method: "none"
+      sessionManagement:
+        method: "cookie"
+
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  - type: "spider"
+    parameters:
+      maxDuration: 2
+      maxDepth: 5
+      
+  - type: "passiveScan-wait"
+    parameters:
+      maxDuration: 5
+      
+  - type: "activeScan"
+    parameters:
+      maxRuleDurationInMins: 2
+      maxScanDurationInMins: 5
+      
+  - type: "report"
+    parameters:
+      template: "traditional-html"
+      reportDir: "/zap/wrk"
+      reportFile: "zap-report.html"
+      reportTitle: "OWASP ZAP Security Scan Report"
+      reportDescription: "Automated DAST scan of the Flask application"
