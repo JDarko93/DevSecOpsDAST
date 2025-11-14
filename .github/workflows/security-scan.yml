@@ -22,7 +22,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Pull Docker image
-      run: docker pull jdarko93/devsecops-security-pipeline-web:latest
+      run: docker pull jdarko93/devsecops-security-pipeline-web
 
     - name: Run Container
       run: docker compuse up -d
