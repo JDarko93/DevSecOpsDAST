@@ -25,7 +25,7 @@ jobs:
       run: docker pull jdarko/devsecops-security-pipeline-web
 
     - name: Run Container
-      run: docker compose up -d
+      run: docker compose up
     
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
