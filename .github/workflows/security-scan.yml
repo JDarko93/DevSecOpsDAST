@@ -63,7 +63,6 @@ jobs:
         docker run --rm \
           --network host \
           -v $(pwd):/zap/wrk:rw \
-          -v $(pwd)/zap-config.yaml:/zap/wrk/zap-config.yaml:ro \
           ghcr.io/zaproxy/zaproxy:stable \
           zap.sh -cmd -autorun /zap/wrk/zap-config.yaml
     
