@@ -38,7 +38,7 @@ jobs:
     - name: Generate Trivy HTML report
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: 'devsecops-security-pipeline-web:latest'
+        image-ref: 'jdarko/devsecops-security-pipeline-web:latest'
         format: 'template'
         template: '@/contrib/html.tpl'
         output: 'trivy-report.html'
