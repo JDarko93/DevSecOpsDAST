@@ -7,10 +7,7 @@ env:
       includePaths:
         - "http://localhost:5000/.*"
       excludePaths: []
-      authentication:
-        method: none
-      sessionManagement:
-        method: "cookie"
+
 
   parameters:
     failOnError: true
@@ -20,6 +17,7 @@ env:
 jobs:
   - type: "spider"
     parameters:
+      url: "http://localhost:5000"
       maxDuration: 2
       maxDepth: 5
       
@@ -29,6 +27,7 @@ jobs:
       
   - type: "activeScan"
     parameters:
+      context: "devsecops-app"
       maxRuleDurationInMins: 2
       maxScanDurationInMins: 5
       
