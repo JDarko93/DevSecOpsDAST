@@ -3,12 +3,12 @@ env:
   contexts:
     - name: "devsecops-app"
       urls:
-        - "http://web:5000"
+        - "http://localhost:5000"
       includePaths:
-        - "http://web:5000/.*"
+        - "http://localhost:5000/.*"
       excludePaths: []
       authentication:
-        method: "none"
+        method: none
       sessionManagement:
         method: "cookie"
 
