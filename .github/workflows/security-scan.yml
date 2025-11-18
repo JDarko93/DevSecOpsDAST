@@ -26,11 +26,6 @@ jobs:
 
     - name: Run Container
       run: docker compose up -d
-
-    - name: Wait for application to load up
-      run: |
-        sleep 180
-        curl --retry 10 --retry-delay 3 --retry-connfefused http://localhost:5000
     
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
