@@ -34,7 +34,7 @@ jobs:
   - type: "report"
     parameters:
       template: "traditional-html"
-      reportDir: "/zap/wrk"
+      reportDir: "/zap/wrk/zap-reports"
       reportFile: "zap-report.html"
       reportTitle: "OWASP ZAP Security Scan Report"
       reportDescription: "Automated DAST scan of the Flask application"
