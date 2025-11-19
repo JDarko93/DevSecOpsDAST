@@ -136,7 +136,7 @@ jobs:
           - Trivy Container Scan: ${{ env.critical_vulns == 'true' && 'CRITICAL vulnerabilities found' || 'Completed' }}
           - OWASP ZAP DAST Scan: ${{ env.security_issues == 'true' && 'HIGH risk issues found' || 'Completed' }}
           
-          This is an automated notification from your DevSecOps pipeline.
+          This is an automated notification from your DevSecOps DAST pipeline.
         to: ${{ secrets.NOTIFICATION_EMAIL }}
         from: DevSecOps Pipeline <${{ secrets.EMAIL_USERNAME }}>
     
