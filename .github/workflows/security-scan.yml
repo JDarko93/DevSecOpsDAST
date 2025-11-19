@@ -2,7 +2,7 @@ name: Security Scanning Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -40,7 +40,7 @@ jobs:
       with:
         image-ref: 'jdarko/devsecops-security-pipeline-web:latest'
         format: 'template'
-        template: 'contrib/html.tpl'
+        template: '/contrib/html.tpl'
         output: 'trivy-report.html'
         severity: 'CRITICAL,HIGH,MEDIUM,LOW'
     
