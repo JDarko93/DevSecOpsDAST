@@ -40,7 +40,7 @@ jobs:
       with:
         image-ref: 'jdarko/devsecops-security-pipeline-web:latest'
         format: 'template'
-        template: 'contrib/html.tpl'
+        template: '@contrib/html.tpl'
         output: 'trivy-report.html'
         severity: 'CRITICAL,HIGH,MEDIUM,LOW'
     
@@ -75,7 +75,7 @@ jobs:
       if: always()
       with:
         name: zap-report
-        path: zap-report.html
+        path: zap-reports/zap-report.html
         retention-days: 30
     
     - name: Check for critical vulnerabilities
