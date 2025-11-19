@@ -89,7 +89,7 @@ jobs:
         fi
         
         # Check ZAP results for high-risk findings
-        if grep -q "High" zap-report.html; then
+        if grep -q "High" zap-reports/zap-report.html; then
           echo "⚠️ HIGH risk security issues found in DAST scan!"
           echo "security_issues=true" >> $GITHUB_ENV
         fi
